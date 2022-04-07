@@ -1,0 +1,38 @@
+{
+	"name": "arduino-opus",
+	"keywords": "audio, codec, opus, lossy",
+	"description": "Opus Audio Codec for Arduino",
+	"license": "Apache-2.0",
+	"authors":
+	{
+		"name": "Victor Tseng",
+		"email": "palatis@gmail.com",
+		"url": "https://github.com/Palatis/arduino-opus"
+	},
+	"repository": {
+	    "type": "git",
+	    "url": "https://github.com/Palatis/arduino-opus"
+	},
+	"version": "0.2",
+	"frameworks": "arduino",
+	"platforms": "*",
+
+	"build": {
+		"flags": [
+			"-I src/celt",
+			"-I src/silk",
+			"-I src/silk/fixed",
+
+			"-DHAVE_STDINT_H",
+
+			"-DDISABLE_FLOAT_API",
+			"-DFIXED_POINT",
+			"-DVAR_ARRAYS",
+			"-DOPUS_BUILD",
+
+			"-DOP_DISABLE_FLOAT_API",
+			"-DOP_FIXED_POINT",
+			"-DOP_SMALL_FOOTPRINT"
+		]
+	}
+}

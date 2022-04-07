@@ -1,0 +1,48 @@
+image: Visual Studio 2015
+configuration:
+- Debug
+- Release
+- Release-NoHTTP
+
+platform:
+- Win32
+- x64
+
+install:
+- cd %APPVEYOR_BUILD_FOLDER%\..
+- git clone -q https://github.com/xiph/opus.git opus
+- git clone -q https://github.com/xiph/ogg.git ogg
+- msbuild opus\win32\VS2015\opus.vcxproj /p:Configuration=%CONFIGURATION:-NoHTTP=%;Platform=%PLATFORM% /m /v:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- msbuild ogg\win32\VS2015\libogg_static.sln /p:Configuration=%CONFIGURATION:-NoHTTP=%;Platform=%PLATFORM% /m /v:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% git clone -q --branch=OpenSSL_1_0_2-stable https://github.com/openssl/openssl.git openssl
+- ps: >-
+        If ($env:Platform -Match "Win32") {
+            $env:VCVARS_PLATFORM="x86"
+            $env:OPENSSL_TARGET="VC-WIN32"
+            $env:DO="do_ms"
+        } Else {
+            $env:VCVARS_PLATFORM="amd64"
+            $env:OPENSSL_TARGET="VC-WIN64A"
+            $env:DO="do_win64a"
+        }
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% call "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% cd openssl
+# without prefix, libs end up in out32 for both 32 and 64-bit
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% perl Configure %OPENSSL_TARGET% no-asm --prefix=%CD%\%PLATFORM%\Release
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% call ms\%DO%
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% nmake /f ms\nt.mak
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% nmake /f ms\nt.mak install
+# prevents warning 4099 on linking
+- if %CONFIGURATION:-NoHTTP=%==%CONFIGURATION% copy /B tmp32\lib.pdb %CD%\%PLATFORM%\Release\lib\lib.pdb
+- cd %APPVEYOR_BUILD_FOLDER%
+
+build:
+  project: win32\VS2015\opusfile.sln
+  parallel: true
+  verbosity: minimal
+
+after_build:
+- 7z a opusfile.zip win32\VS2015\%PLATFORM%\%CONFIGURATION%\opusfile.lib include\opusfile.h
+
+artifacts:
+- path: opusfile.zip
